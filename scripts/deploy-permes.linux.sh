@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Deploy hermes.ts to pi extension directory (Linux only)
-# Usage: ./deploy-hermes.linux.sh
+# Deploy permes.ts to pi extension directory (Linux only)
+# Usage: ./deploy-permes.linux.sh
 
 if [ "$(uname -s)" != "Linux" ]; then
   echo "This deploy script is Linux-only. Use manual install on this OS."
