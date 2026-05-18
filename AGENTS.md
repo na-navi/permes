@@ -50,7 +50,7 @@ pi-coding-agent 用の Hermes CLI 拡張。`hermes` CLI を経由して任意の
          → 生テキストのみ（セッションID不要）
 ```
 
-## /hermes コマンド
+## /permes コマンド
 
 ### 基本使い方
 
@@ -98,7 +98,7 @@ cp permes.ts ~/.pi/agent/extensions/permes.ts
 ### コミット方針
 
 - コミット形式: 命令形、スコープ付き
-  - 例: `refactor: async sub-agent architecture for /hermes`
+  - 例: `refactor: async sub-agent architecture for /permes`
   - 例: `fix: reduce sendToGrok timeout to prevent Pi freezing`
   - 例: `docs: READMEを日本語化`
 - PR は小さく。応急処置と根本解決は分ける
