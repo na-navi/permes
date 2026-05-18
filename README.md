@@ -95,7 +95,6 @@ Single file: `hermes.ts` — no build step. Assumes pi's bundled extension runti
 
 ## Documentation
 
-- [AGENTS.md](./AGENTS.md) — development guidelines and architecture notes (Japanese)
 - [日本語README](./日本語README.md) — Japanese documentation
 
 ## License
