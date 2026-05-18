@@ -2,7 +2,7 @@
 
 语言: 简体中文 | [English](./README.md) | [日本語](./日本語README.md)
 
-![pi-hermes architecture](./assets/pi-hermes-hero.webp)
+![permes architecture](./assets/permes-hero.webp)
 
 [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) 的实验性 Hermes CLI 桥接扩展。
 
