@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed project from **pi-hermes** to **permes**
+  - Primary command: `/permes` (was `/hermes`)
+  - Primary review tool: `permes-review` (was `hermes-review`)
+  - Cache directory: `permes-bin` (was `hermes-bin`, with fallback read)
+  - Source file: `permes.ts` (was `hermes.ts`)
+- `/hermes` kept as deprecated alias (warns, then forwards to `/permes`)
+- `hermes-review` kept as deprecated alias
+- Deploy script removes old `~/.pi/agent/extensions/hermes.ts` to prevent double-registration (#17)
+
 ## [0.1.0] - 2026-05-18
 
 ### Added
