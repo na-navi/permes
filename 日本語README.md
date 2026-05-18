@@ -2,6 +2,8 @@
 
 言語: 日本語 | [English](./README.md) | [简体中文](./README.zh-CN.md)
 
+![pi-hermes architecture](./assets/pi-hermes-hero.webp)
+
 [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) 用の Experimental Hermes CLI ブリッジ拡張。
 
 [Hermes Agent](https://github.com/nousresearch/hermes-agent) CLI にバックグラウンドでプロンプトを投げ、結果を pi に持ち込んで自律レビューする。

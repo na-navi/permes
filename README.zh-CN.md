@@ -2,6 +2,8 @@
 
 语言: 简体中文 | [English](./README.md) | [日本語](./日本語README.md)
 
+![pi-hermes architecture](./assets/pi-hermes-hero.webp)
+
 [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) 的实验性 Hermes CLI 桥接扩展。
 
 该扩展让 pi 将提示委托给 [Hermes Agent](https://github.com/nousresearch/hermes-agent) CLI 在后台执行，然后将结果带回 pi 进行自主审查。支持 Grok、Claude、GLM 以及 Hermes 中可用的所有模型。

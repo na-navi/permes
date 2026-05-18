@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="800" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f0c29"/>
+      <stop offset="50%" stop-color="#302b63"/>
+      <stop offset="100%" stop-color="#24243e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="100%" stop-color="#7b2ff7"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#56ab2f"/>
+      <stop offset="100%" stop-color="#a8e063"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f7971e"/>
+      <stop offset="100%" stop-color="#ffd200"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="360" fill="url(#bg)" rx="12"/>
+
+  <!-- Title -->
+  <text x="400" y="52" text-anchor="middle" fill="url(#accent)" font-size="32" font-weight="700" letter-spacing="2">pi-hermes</text>
+  <text x="400" y="76" text-anchor="middle" fill="#8b8ba7" font-size="14">pi-coding-agent × Hermes CLI bridge</text>
+
+  <!-- pi box -->
+  <rect x="60" y="140" width="160" height="80" rx="10" fill="#1a1a3e" stroke="url(#accent)" stroke-width="2"/>
+  <text x="140" y="172" text-anchor="middle" fill="#00d2ff" font-size="20" font-weight="600">pi</text>
+  <text x="140" y="198" text-anchor="middle" fill="#6c6c8a" font-size="11">coding-agent</text>
+
+  <!-- Arrow: pi → hermes -->
+  <line x1="222" y1="180" x2="308" y2="180" stroke="url(#accent)" stroke-width="2" marker-end="url(#arrowCyan)"/>
+  <defs>
+    <marker id="arrowCyan" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#00d2ff"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a8e063"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ffd200"/>
+    </marker>
+  </defs>
+  <text x="265" y="170" text-anchor="middle" fill="#6c6c8a" font-size="10">/hermes</text>
+
+  <!-- Hermes box -->
+  <rect x="310" y="140" width="180" height="80" rx="10" fill="#1a1a3e" stroke="url(#orange)" stroke-width="2"/>
+  <text x="400" y="172" text-anchor="middle" fill="#ffd200" font-size="20" font-weight="600">Hermes</text>
+  <text x="400" y="198" text-anchor="middle" fill="#6c6c8a" font-size="11">hermes chat -q -Q</text>
+
+  <!-- Arrow: hermes → model -->
+  <line x1="492" y1="180" x2="578" y2="180" stroke="url(#orange)" stroke-width="2" marker-end="url(#arrowOrange)"/>
+  <text x="535" y="170" text-anchor="middle" fill="#6c6c8a" font-size="10">API</text>
+
+  <!-- Model box -->
+  <rect x="580" y="140" width="160" height="80" rx="10" fill="#1a1a3e" stroke="url(#green)" stroke-width="2"/>
+  <text x="660" y="172" text-anchor="middle" fill="#a8e063" font-size="20" font-weight="600">Grok</text>
+  <text x="660" y="198" text-anchor="middle" fill="#6c6c8a" font-size="11">grok-4.3 / Claude / GLM</text>
+
+  <!-- Review loop -->
+  <path d="M 400 222 L 400 275 Q 400 290 385 290 L 155 290 Q 140 290 140 275 L 140 222"
+        fill="none" stroke="url(#green)" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowGreen)"/>
+  <text x="270" y="282" text-anchor="middle" fill="#a8e063" font-size="11" font-weight="500">review loop (max 3 rounds)</text>
+
+  <!-- Features -->
+  <text x="100" y="335" fill="#8b8ba7" font-size="11">✦ async background tasks</text>
+  <text x="300" y="335" fill="#8b8ba7" font-size="11">✦ autonomous review</text>
+  <text x="500" y="335" fill="#8b8ba7" font-size="11">✦ --tui split pane</text>
+  <text x="660" y="335" fill="#8b8ba7" font-size="11">✦ model caching</text>
+</svg>

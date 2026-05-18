@@ -1,5 +1,9 @@
 # pi-hermes
 
+Languages: English | [日本語](./日本語README.md) | [简体中文](./README.zh-CN.md)
+
+![pi-hermes architecture](./assets/pi-hermes-hero.webp)
+
 Experimental Hermes CLI bridge for [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent).
 
 This extension lets pi delegate a prompt to [Hermes Agent](https://github.com/nousresearch/hermes-agent) CLI in the background, then brings the result back into pi for autonomous review. Supports Grok, Claude, GLM, and any model available in Hermes.
