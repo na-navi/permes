@@ -43,6 +43,7 @@ Then reload pi with `/reload`. You should see the extension load in the status b
 /hermes <message>              # Ask with previously used model
 /hermes -m grok-4.3 <message>  # Specify model
 /hermes -p xai-oauth <message> # Specify provider
+/hermes --tui <message>        # Live TUI mode (split pane)
 /hermes --status               # List running tasks
 /hermes --result <id>          # Get completed task result
 /hermes --cancel <id>          # Cancel a running task
@@ -52,6 +53,7 @@ Then reload pi with `/reload`. You should see the extension load in the status b
 - Default model on first use: `grok-4.3`
 - The last used `-m` / `-p` values are cached for subsequent calls
 - Tasks run in the background — pi stays responsive while Hermes thinks
+- Use `--tui` to watch the conversation live in a split pane (WezTerm or Windows Terminal)
 
 ### Example workflow
 
@@ -77,10 +79,12 @@ you: /hermes -m grok-4.3 Explain quantum entanglement in 3 bullet points
 
 ## Architecture
 
+### CLI mode (default)
+
 ```
 /hermes <message>
   │
-  ├─ hermes chat -q "msg" -m model --provider provider
+  ├─ hermes chat -q -Q "msg" -m model --provider provider
   │   └─ Parse session ID + response from CLI output
   │
   ├─ pi reviews response autonomously
@@ -91,11 +95,26 @@ you: /hermes -m grok-4.3 Explain quantum entanglement in 3 bullet points
   └─ Max 3 review rounds, then escalate to user
 ```
 
+### TUI mode (`--tui`)
+
+```
+/hermes --tui <message>
+  │
+  ├─ Spawn hermes chat in split pane (WezTerm / Windows Terminal)
+  │
+  ├─ Poll session file until stable (8s no change)
+  │
+  ├─ Read last assistant message from session JSON
+  │
+  └─ Inject result to pi (same review loop as CLI mode)
+```
+
 Single file: `hermes.ts` — no build step. Assumes pi's bundled extension runtime dependencies (including `typebox`).
 
 ## Documentation
 
 - [日本語README](./日本語README.md) — Japanese documentation
+- [简体中文README](./README.zh-CN.md) — Simplified Chinese documentation
 
 ## License
 

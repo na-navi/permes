@@ -1,5 +1,7 @@
 # pi-hermes
 
+言語: 日本語 | [English](./README.md) | [简体中文](./README.zh-CN.md)
+
 [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) 用の Experimental Hermes CLI ブリッジ拡張。
 
 [Hermes Agent](https://github.com/nousresearch/hermes-agent) CLI にバックグラウンドでプロンプトを投げ、結果を pi に持ち込んで自律レビューする。
@@ -45,6 +47,7 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
 /hermes <message>              # 前回と同じモデルで質問
 /hermes -m grok-4.3 <message>  # モデル指定
 /hermes -p xai-oauth <message> # プロバイダー指定
+/hermes --tui <message>        # TUI ライブモード（分割ペイン）
 /hermes --status               # 実行中タスク一覧
 /hermes --result <id>          # 完了タスクの結果取得
 /hermes --cancel <id>          # タスクをキャンセル
@@ -54,6 +57,7 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
 - 初回のデフォルトモデル: `grok-4.3`
 - 最後に使った `-m` / `-p` 値はキャッシュされ、次回以降の指定なし呼び出しで使われる
 - タスクはバックグラウンドで実行 — Hermes が考えている間も pi は操作可能
+- `--tui` で分割ペインにリアルタイム表示（WezTerm / Windows Terminal 対応）
 
 ## トラブルシューティング
 
@@ -67,10 +71,12 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
 
 ## アーキテクチャ
 
+### CLI モード（デフォルト）
+
 ```
 /hermes <message>
   │
-  ├─ hermes chat -q "msg" -m model -Q
+  ├─ hermes chat -q -Q "msg" -m model
   │   └─ CLI出力からセッションID + 応答テキストを抽出
   │
   ├─ pi が応答を自律レビュー
@@ -79,6 +85,20 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
   │       └─ hermes -z "feedback" --resume <session_id>
   │
   └─ 最大3回のレビューラウンド、解決しない場合はユーザーに報告
+```
+
+### TUI モード（`--tui`）
+
+```
+/hermes --tui <message>
+  │
+  ├─ 分割ペインで hermes chat を起動（WezTerm / Windows Terminal）
+  │
+  ├─ セッションファイルをポーリング（8秒間変化なしで完了判定）
+  │
+  ├─ セッション JSON から最後のアシスタントメッセージを読み取り
+  │
+  └─ pi に結果を注入（CLI モードと同じレビューループ）
 ```
 
 単一ファイル: `hermes.ts` — ビルド不要。pi のバンドル済み拡張ランタイム依存関係（`typebox` を含む）を使用。
