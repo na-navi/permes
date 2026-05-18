@@ -27,6 +27,7 @@ import { homedir } from "os";
 import { join } from "path";
 
 const execFileAsync = promisify(execFile);
+const execFileSync = execFile.sync;
 
 const HERMES_HOME = join(process.env.LOCALAPPDATA || join(homedir(), "AppData", "Local"), "hermes");
 const HERMES_SESSIONS_DIR = join(HERMES_HOME, "sessions");
@@ -290,11 +291,54 @@ function extractLastAssistant(data: SessionData): string | null {
   return null;
 }
 
+/** Count current panes in WezTerm. Returns 0 if not in WezTerm or on error. */
+function weztermPaneCount(): number {
+  try {
+    const result = execFileSync("wezterm", ["cli", "list", "--format", "json"], { encoding: "utf-8", timeout: 3000 });
+    const panes = JSON.parse(result);
+    return Array.isArray(panes) ? panes.length : 0;
+  } catch { return 0; }
+}
+
+/** Check if a pane is already running hermes. Returns paneId or undefined. */
+function weztermFindHermesPane(): string | undefined {
+  try {
+    const result = execFileSync("wezterm", ["cli", "list", "--format", "json"], { encoding: "utf-8", timeout: 3000 });
+    const panes = JSON.parse(result);
+    if (!Array.isArray(panes)) return undefined;
+    for (const p of panes) {
+      const cmd: string = (p as any).cwd || (p as any).title || "";
+      if (cmd.includes("hermes")) return String((p as any).pane_id);
+    }
+    return undefined;
+  } catch { return undefined; }
+}
+
 /** Spawn hermes chat in a split pane (WezTerm or Windows Terminal). */
 function spawnHermesTui(chatArgs: string[]): void {
   const terminal = detectTerminal();
 
   if (terminal === "wezterm") {
+    // Reuse existing hermes pane if found
+    const existingPane = weztermFindHermesPane();
+    if (existingPane) {
+      // Send hermes command to the existing pane
+      spawn("wezterm", ["cli", "send", "--pane-id", existingPane, "--no-paste", "hermes chat " + chatArgs.map(a => `"${a}"`).join(" ") + "\n"], {
+        detached: true, stdio: "ignore", shell: true,
+      }).unref();
+      // Focus the pane
+      spawn("wezterm", ["cli", "activate-pane", "--pane-id", existingPane], {
+        detached: true, stdio: "ignore", shell: true,
+      }).unref();
+      return;
+    }
+
+    // Check pane count — refuse if already split (would make panes too narrow)
+    const count = weztermPaneCount();
+    if (count > 1) {
+      throw new Error(`Already ${count} WezTerm panes. Close extra panes or use default mode (without --tui).`);
+    }
+
     spawn("wezterm", ["cli", "split-pane", "--right", "--", "hermes", "chat", ...chatArgs], {
       detached: true, stdio: "ignore", shell: true,
     }).unref();
