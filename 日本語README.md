@@ -59,7 +59,7 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
 - 初回のデフォルトモデル: `grok-4.3`
 - 最後に使った `-m` / `-p` 値はキャッシュされ、次回以降の指定なし呼び出しで使われる
 - タスクはバックグラウンドで実行 — Hermes が考えている間も pi は操作可能
-- `--tui` で分割ペインにリアルタイム表示（WezTerm / Windows Terminal 対応）
+- `--tui` で WezTerm 分割ペインにリアルタイム表示（Linux 専用）
 
 ## トラブルシューティング
 
@@ -89,12 +89,14 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
   └─ 最大3回のレビューラウンド、解決しない場合はユーザーに報告
 ```
 
-### TUI モード（`--tui`）
+### TUI モード（`--tui`）— Linux 専用
+
+WezTerm が必要。分割ペインに hermes chat を起動し、セッションファイルをポーリングして完了を検知。
 
 ```
 /hermes --tui <message>
   │
-  ├─ 分割ペインで hermes chat を起動（WezTerm / Windows Terminal）
+  ├─ WezTerm 分割ペインで hermes chat を起動
   │
   ├─ セッションファイルをポーリング（8秒間変化なしで完了判定）
   │
@@ -102,6 +104,8 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
   │
   └─ pi に結果を注入（CLI モードと同じレビューループ）
 ```
+
+Windows / macOS では `--tui` は警告して終了。デフォルト CLI モードを使ってください。
 
 単一ファイル: `hermes.ts` — ビルド不要。pi のバンドル済み拡張ランタイム依存関係（`typebox` を含む）を使用。
 

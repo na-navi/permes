@@ -57,7 +57,7 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
 - 首次使用的默认模型：`grok-4.3`
 - 上次使用的 `-m` / `-p` 值会被缓存，供后续调用使用
 - 任务在后台运行——Hermes 思考时 pi 保持响应
-- 使用 `--tui` 在分屏中实时观看对话（WezTerm 或 Windows Terminal）
+- 使用 `--tui` 在 WezTerm 分屏中实时观看对话（仅限 Linux）
 
 ### 示例工作流
 
@@ -99,12 +99,14 @@ you: /hermes -m grok-4.3 用3个要点解释量子纠缠
   └─ 最多 3 轮审查，然后上报给用户
 ```
 
-### TUI 模式（`--tui`）
+### TUI 模式（`--tui`）— 仅限 Linux
+
+需要 WezTerm。在分屏中启动 hermes chat，轮询 session 文件直到完成。
 
 ```
 /hermes --tui <message>
   │
-  ├─ 在分屏中启动 hermes chat（WezTerm / Windows Terminal）
+  ├─ 在 WezTerm 分屏中启动 hermes chat
   │
   ├─ 轮询 session 文件直到稳定（8 秒无变化）
   │
@@ -112,6 +114,8 @@ you: /hermes -m grok-4.3 用3个要点解释量子纠缠
   │
   └─ 将结果注入 pi（与 CLI 模式相同的审查循环）
 ```
+
+在 Windows 和 macOS 上，`--tui` 会显示警告并退出。请使用默认 CLI 模式。
 
 ## 文件结构
 

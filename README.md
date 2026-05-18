@@ -57,7 +57,7 @@ Then reload pi with `/reload`. You should see the extension load in the status b
 - Default model on first use: `grok-4.3`
 - The last used `-m` / `-p` values are cached for subsequent calls
 - Tasks run in the background — pi stays responsive while Hermes thinks
-- Use `--tui` to watch the conversation live in a split pane (WezTerm or Windows Terminal)
+- Use `--tui` to watch the conversation live in a WezTerm split pane (Linux only)
 
 ### Example workflow
 
@@ -99,12 +99,15 @@ you: /hermes -m grok-4.3 Explain quantum entanglement in 3 bullet points
   └─ Max 3 review rounds, then escalate to user
 ```
 
-### TUI mode (`--tui`)
+### TUI mode (`--tui`) — Linux only
+
+Requires WezTerm. Spawns hermes chat in a split pane and polls the session
+file until completion.
 
 ```
 /hermes --tui <message>
   │
-  ├─ Spawn hermes chat in split pane (WezTerm / Windows Terminal)
+  ├─ Spawn hermes chat in WezTerm split pane
   │
   ├─ Poll session file until stable (8s no change)
   │
@@ -112,6 +115,8 @@ you: /hermes -m grok-4.3 Explain quantum entanglement in 3 bullet points
   │
   └─ Inject result to pi (same review loop as CLI mode)
 ```
+
+On Windows and macOS, `--tui` exits with a warning. Use default CLI mode instead.
 
 Single file: `hermes.ts` — no build step. Assumes pi's bundled extension runtime dependencies (including `typebox`).
 

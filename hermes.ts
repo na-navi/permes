@@ -19,7 +19,7 @@
  */
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { execFile, spawn } from "child_process";
+import { execFile, execFileSync as execFileSyncReal, spawn } from "child_process";
 import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, readdirSync, statSync } from "fs";
 import { promisify } from "util";
 import { randomUUID } from "crypto";
@@ -27,7 +27,7 @@ import { homedir } from "os";
 import { join } from "path";
 
 const execFileAsync = promisify(execFile);
-const execFileSync = execFile.sync;
+const execFileSync = execFileSyncReal;
 
 const HERMES_HOME = join(process.env.LOCALAPPDATA || join(homedir(), "AppData", "Local"), "hermes");
 const HERMES_SESSIONS_DIR = join(HERMES_HOME, "sessions");
@@ -247,13 +247,12 @@ async function runTask(task: HermesTask, model: string, provider: string | undef
   }
 }
 
-// --- TUI mode ---
+// --- TUI mode (Linux only) ---
 
-/** Detect terminal emulator that supports split-pane. */
-function detectTerminal(): "wezterm" | "windows-terminal" | null {
-  if (process.env.WEZTERM_CONFIG_DIR || process.env.TERM_PROGRAM === "WezTerm") return "wezterm";
-  if (process.env.WT_SESSION) return "windows-terminal";
-  return null;
+/** Detect if running in WezTerm on Linux. */
+function isWezTerm(): boolean {
+  return process.platform === "linux" &&
+    !!(process.env.WEZTERM_CONFIG_DIR || process.env.TERM_PROGRAM === "WezTerm");
 }
 
 /** List hermes session filenames (*.json) in the sessions directory. */
@@ -291,7 +290,7 @@ function extractLastAssistant(data: SessionData): string | null {
   return null;
 }
 
-/** Count current panes in WezTerm. Returns 0 if not in WezTerm or on error. */
+/** Count current panes in WezTerm. Returns 0 on error. */
 function weztermPaneCount(): number {
   try {
     const result = execFileSync("wezterm", ["cli", "list", "--format", "json"], { encoding: "utf-8", timeout: 3000 });
@@ -300,55 +299,17 @@ function weztermPaneCount(): number {
   } catch { return 0; }
 }
 
-/** Check if a pane is already running hermes. Returns paneId or undefined. */
-function weztermFindHermesPane(): string | undefined {
-  try {
-    const result = execFileSync("wezterm", ["cli", "list", "--format", "json"], { encoding: "utf-8", timeout: 3000 });
-    const panes = JSON.parse(result);
-    if (!Array.isArray(panes)) return undefined;
-    for (const p of panes) {
-      const cmd: string = (p as any).cwd || (p as any).title || "";
-      if (cmd.includes("hermes")) return String((p as any).pane_id);
-    }
-    return undefined;
-  } catch { return undefined; }
-}
-
-/** Spawn hermes chat in a split pane (WezTerm or Windows Terminal). */
+/** Spawn hermes chat in a WezTerm split pane (Linux only). */
 function spawnHermesTui(chatArgs: string[]): void {
-  const terminal = detectTerminal();
-
-  if (terminal === "wezterm") {
-    // Reuse existing hermes pane if found
-    const existingPane = weztermFindHermesPane();
-    if (existingPane) {
-      // Send hermes command to the existing pane
-      spawn("wezterm", ["cli", "send", "--pane-id", existingPane, "--no-paste", "hermes chat " + chatArgs.map(a => `"${a}"`).join(" ") + "\n"], {
-        detached: true, stdio: "ignore", shell: true,
-      }).unref();
-      // Focus the pane
-      spawn("wezterm", ["cli", "activate-pane", "--pane-id", existingPane], {
-        detached: true, stdio: "ignore", shell: true,
-      }).unref();
-      return;
-    }
-
-    // Check pane count — refuse if already split (would make panes too narrow)
-    const count = weztermPaneCount();
-    if (count > 1) {
-      throw new Error(`Already ${count} WezTerm panes. Close extra panes or use default mode (without --tui).`);
-    }
-
-    spawn("wezterm", ["cli", "split-pane", "--right", "--", "hermes", "chat", ...chatArgs], {
-      detached: true, stdio: "ignore", shell: true,
-    }).unref();
-  } else if (terminal === "windows-terminal") {
-    spawn("wt", ["-w", "0", "sp", "--", "hermes", "chat", ...chatArgs], {
-      detached: true, stdio: "ignore", shell: true,
-    }).unref();
-  } else {
-    throw new Error("No supported terminal for TUI mode. Use WezTerm or Windows Terminal.");
+  // Check pane count — refuse if already split (would make panes too narrow)
+  const count = weztermPaneCount();
+  if (count > 1) {
+    throw new Error(`Already ${count} WezTerm panes. Close extra panes or use default mode (without --tui).`);
   }
+
+  spawn("wezterm", ["cli", "split-pane", "--right", "--", "hermes", "chat", ...chatArgs], {
+    detached: true, stdio: "ignore",
+  }).unref();
 }
 
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
@@ -560,9 +521,27 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
-      // --tui: spawn hermes in split pane, poll session file
+      // --tui: spawn hermes in split pane, poll session file (Linux only)
       const tuiMode = parts.includes("--tui");
       const cleanedText = text.replace(/\s*--tui\s*/g, " ").trim();
+
+      // Guard: --tui is Linux-only
+      if (tuiMode && process.platform !== "linux") {
+        ctx.ui.notify(
+          "--tui mode is currently supported on Linux only. Use default CLI mode instead: /hermes <message>",
+          "warn",
+        );
+        return;
+      }
+
+      // Guard: --tui requires WezTerm
+      if (tuiMode && !isWezTerm()) {
+        ctx.ui.notify(
+          "--tui mode requires WezTerm. Use default CLI mode instead: /hermes <message>",
+          "warn",
+        );
+        return;
+      }
 
       // Default: send message to model
       const { model, provider, message } = resolveModel(cleanedText);

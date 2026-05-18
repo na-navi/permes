@@ -61,9 +61,7 @@ function check(icon: string, msg: string, ok: boolean, detail = ""): void {
 interface AuthInfo {
   method: string;
   provider: string;
-  tokenPrefix?: string;
   tokenLength?: number;
-  keyPrefix?: string;
   keyLength?: number;
   source?: string;
 }
@@ -78,7 +76,6 @@ function detectOAuth(): AuthInfo | null {
       return {
         method: "xAI OAuth (browser auth)",
         provider: "xai-oauth",
-        tokenPrefix: at.slice(0, 20) + "...",
         tokenLength: at.length,
       };
     }
@@ -115,7 +112,6 @@ function detectApiKey(): AuthInfo | null {
     return {
       method: "API Key",
       provider: "xai",
-      keyPrefix: key.slice(0, 8) + "...",
       keyLength: key.length,
       source,
     };
@@ -190,7 +186,7 @@ function main(): void {
 
   if (oauth) {
     check("🔑", `xAI OAuth detected: ${oauth.method}`, true,
-      `token=${oauth.tokenPrefix} (${oauth.tokenLength} chars)`);
+      `token present (${oauth.tokenLength} chars)`);
     hasAnyAuth = true;
   } else {
     check("🔑", "xAI OAuth not found", false);
@@ -198,7 +194,7 @@ function main(): void {
 
   if (apiKey) {
     check("🗝️", `API Key detected: ${apiKey.method}`, true,
-      `prefix=${apiKey.keyPrefix} via ${apiKey.source}`);
+      `key present (${apiKey.keyLength} chars) via ${apiKey.source}`);
     hasAnyAuth = true;
   } else {
     check("🗝️", "XAI_API_KEY not set", false);
