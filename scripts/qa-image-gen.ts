@@ -238,7 +238,37 @@ function main(): void {
 
   console.log();
 
-  // 3. Toolset status
+  // 3. Image gen provider config
+  console.log(c("cyan", "▸ Provider Selection"));
+  console.log();
+
+  let activeProvider = "";
+  if (existsSync(CONFIG_FILE)) {
+    try {
+      const cfg = yaml.load(readFileSync(CONFIG_FILE, "utf-8")) as Record<string, any>;
+      activeProvider = cfg?.image_gen?.provider ?? "";
+    } catch {
+      // ignore
+    }
+  }
+
+  if (activeProvider === "xai") {
+    check("⚙️", "image_gen.provider = xai", true, "explicitly configured");
+  } else if (activeProvider) {
+    check("⚙️", `image_gen.provider = ${activeProvider}`, false,
+      `expected "xai" — hermes may use a different backend`);
+    console.log(`      → Fix: hermes config set image_gen.provider xai`);
+    console.log(c("yellow", "      ⚠ Restart hermes after changing config (new session required)."));
+  } else {
+    check("⚙️", "image_gen.provider not set", false,
+      "falls back to FAL (legacy default)");
+    console.log(`      → Fix: hermes config set image_gen.provider xai`);
+    console.log(c("yellow", "      ⚠ Restart hermes after changing config (new session required)."));
+  }
+
+  console.log();
+
+  // 4. Toolset status
   console.log(c("cyan", "▸ Toolsets"));
   console.log();
   console.log("  Run this to check & enable:");
@@ -247,14 +277,16 @@ function main(): void {
   console.log("    hermes tools enable video_gen   # enable video gen");
   console.log();
 
-  // 4. Readiness summary
+  // 5. Readiness summary
   console.log(c("cyan", "▸ Readiness Summary"));
   console.log();
 
   const pluginOk = plugins["image_gen/xai"]?.exists ?? false;
   const pluginEnabled = plugins["image_gen/xai"]?.enabled ?? false;
 
-  if (hasAnyAuth && pluginEnabled) {
+  const providerOk = activeProvider === "xai";
+
+  if (hasAnyAuth && pluginEnabled && providerOk) {
     console.log(c("green", "  ✅ Looks good! Try generating an image:"));
     console.log();
     console.log('    hermes -z "猫の侍を墨絵スタイルで描いて"');
@@ -264,6 +296,10 @@ function main(): void {
       console.log(c("yellow", "     (browser auth) for a smoother experience: hermes model"));
       console.log();
     }
+  } else if (hasAnyAuth && pluginEnabled && !providerOk) {
+    console.log(c("yellow", "  ⚠ Auth and plugin are ready, but image_gen.provider is not set to \"xai\"."));
+    console.log(c("yellow", "    Fix: hermes config set image_gen.provider xai"));
+    console.log();
   } else if (hasAnyAuth && !pluginOk) {
     console.log(c("yellow", "  ⚠ Auth is set but the image_gen/xai plugin is not installed."));
     console.log(c("yellow", "    Enable it with: hermes plugins enable image_gen/xai"));
@@ -281,7 +317,7 @@ function main(): void {
     console.log();
   }
 
-  // 5. Also check video_gen
+  // 6. Also check video_gen
   const videoPlugin = plugins["video_gen/xai"];
   if (videoPlugin?.exists && !videoPlugin.enabled) {
     console.log(`  ${c("cyan", "ℹ")} video_gen/xai plugin is also available.`);
