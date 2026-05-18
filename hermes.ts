@@ -89,12 +89,13 @@ function writeCachedModel(model: string, provider?: string): void {
  *   2. Fallback: raw output with metadata lines stripped
  */
 function parseChatOutput(output: string): { sessionId: string | null; response: string } {
-  // Extract session ID — try explicit line first, then resume hint
+  // Extract session ID — try quiet format first, then explicit line, then resume hint
+  const quietSessionMatch = output.match(/^session_id:\s*(\S+)/m);
   const sessionLineMatch = output.match(/^Session:\s+(\S+)/m);
   const resumeMatch = output.match(/hermes --resume (\S+)/);
-  const sessionId = sessionLineMatch?.[1] || resumeMatch?.[1] || null;
+  const sessionId = quietSessionMatch?.[1] || sessionLineMatch?.[1] || resumeMatch?.[1] || null;
 
-  // Extract response from ╭─...╰─ block
+  // Extract response from ╭─...╰─ block (normal mode)
   const blockMatch = output.match(/╭─[\s\S]*?╮\n([\s\S]*?)╰─/);
   if (blockMatch) {
     const text = blockMatch[1]
@@ -103,6 +104,12 @@ function parseChatOutput(output: string): { sessionId: string | null; response: 
       .join("\n")
       .trim();
     return { sessionId, response: text };
+  }
+
+  // Quiet mode (-Q): response is everything before "session_id:" line
+  if (quietSessionMatch) {
+    const response = output.split("session_id:")[0].trim();
+    return { sessionId, response: response || output.trim() };
   }
 
   // Fallback: return raw output stripped of metadata
@@ -122,9 +129,9 @@ function parseChatOutput(output: string): { sessionId: string | null; response: 
   return { sessionId, response: lines.join("\n").trim() || output.trim() };
 }
 
-/** Send initial message via `hermes chat -q` — returns response + session ID. */
+/** Send initial message via `hermes chat -q -Q` — returns response + session ID. */
 async function sendInitial(message: string, model: string, provider: string | undefined, signal?: AbortSignal): Promise<{ response: string; sessionId: string | null }> {
-  const args = ["chat", "-q", message, "-m", model];
+  const args = ["chat", "-q", message, "-m", model, "-Q"];
   if (provider) args.push("--provider", provider);
 
   const { stdout } = await execFileAsync("hermes", args, {
