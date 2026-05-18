@@ -17,9 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Autonomous review loop (max 3 rounds) via `hermes -z --resume <session_id>`
 - Quiet mode (`-Q`) support for reliable session ID and response parsing
 - `--tui` mode: spawn hermes chat in WezTerm split pane (**Linux only**)
+- `--tui-wezterm-beta`: experimental WezTerm split-pane mode (any OS with WezTerm)
   - Session file polling detects completion automatically
   - Pane count guard: refuses to split if >1 pane exists
-  - Windows and macOS exit with a warning
 - Auto-deploy post-commit hook (`.tools/deploy-hermes.sh`)
 - Image generation QA diagnostic script (`scripts/qa-image-gen.ts`)
 - MIT LICENSE

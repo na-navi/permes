@@ -46,20 +46,21 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
 ## 使い方
 
 ```
-/hermes <message>              # 前回と同じモデルで質問
-/hermes -m grok-4.3 <message>  # モデル指定
-/hermes -p xai-oauth <message> # プロバイダー指定
-/hermes --tui <message>        # TUI ライブモード（分割ペイン）
-/hermes --status               # 実行中タスク一覧
-/hermes --result <id>          # 完了タスクの結果取得
-/hermes --cancel <id>          # タスクをキャンセル
-/hermes --reset-model          # モデルキャッシュをクリア
+/hermes <message>                    # 前回と同じモデルで質問
+/hermes -m grok-4.3 <message>        # モデル指定
+/hermes -p xai-oauth <message>       # プロバイダー指定
+/hermes --tui <message>              # TUI ライブモード（Linux専用）
+/hermes --tui-wezterm-beta <message> # 実験的 WezTerm TUI（全OS）
+/hermes --status                     # 実行中タスク一覧
+/hermes --result <id>                # 完了タスクの結果取得
+/hermes --cancel <id>                # タスクをキャンセル
+/hermes --reset-model                # モデルキャッシュをクリア
 ```
 
 - 初回のデフォルトモデル: `grok-4.3`
 - 最後に使った `-m` / `-p` 値はキャッシュされ、次回以降の指定なし呼び出しで使われる
 - タスクはバックグラウンドで実行 — Hermes が考えている間も pi は操作可能
-- `--tui` で WezTerm 分割ペインにリアルタイム表示（Linux 専用）
+- `--tui`（Linux専用）または `--tui-wezterm-beta`（実験的、WezTerm があれば全OS）で分割ペインにリアルタイム表示
 
 ## トラブルシューティング
 
@@ -105,7 +106,16 @@ WezTerm が必要。分割ペインに hermes chat を起動し、セッショ�
   └─ pi に結果を注入（CLI モードと同じレビューループ）
 ```
 
-Windows / macOS では `--tui` は警告して終了。デフォルト CLI モードを使ってください。
+### WezTerm ベータモード（`--tui-wezterm-beta`）— 実験的
+
+WezTerm がインストールされ `wezterm cli` が使える環境なら、OSを問わず動作。
+セッションファイルのポーリングは `--tui` と同じ。Windows では WezTerm 内で実行してください。
+
+```
+/hermes --tui-wezterm-beta <message>
+```
+
+非対応環境では警告して終了。
 
 単一ファイル: `hermes.ts` — ビルド不要。pi のバンドル済み拡張ランタイム依存関係（`typebox` を含む）を使用。
 

@@ -247,12 +247,24 @@ async function runTask(task: HermesTask, model: string, provider: string | undef
   }
 }
 
-// --- TUI mode (Linux only) ---
+// --- TUI mode ---
 
-/** Detect if running in WezTerm on Linux. */
+/** Check if wezterm cli is available (any platform). */
+function isWezTermAvailable(): boolean {
+  try {
+    execFileSync("wezterm", ["cli", "list", "--format", "json"], {
+      encoding: "utf-8",
+      timeout: 3000,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Detect if running inside WezTerm (environment variables). */
 function isWezTerm(): boolean {
-  return process.platform === "linux" &&
-    !!(process.env.WEZTERM_CONFIG_DIR || process.env.TERM_PROGRAM === "WezTerm");
+  return !!(process.env.WEZTERM_CONFIG_DIR || process.env.TERM_PROGRAM === "WezTerm");
 }
 
 /** List hermes session filenames (*.json) in the sessions directory. */
@@ -299,7 +311,7 @@ function weztermPaneCount(): number {
   } catch { return 0; }
 }
 
-/** Spawn hermes chat in a WezTerm split pane (Linux only). */
+/** Spawn hermes chat in a WezTerm split pane. */
 function spawnHermesTui(chatArgs: string[]): void {
   // Check pane count — refuse if already split (would make panes too narrow)
   const count = weztermPaneCount();
@@ -461,7 +473,7 @@ export default function (pi: ExtensionAPI) {
 
   // === /hermes command ===
   pi.registerCommand("hermes", {
-    description: "Ask any model via Hermes CLI (non-blocking). Usage: /hermes <message> | /hermes --tui <message> | /hermes -m model <message> | /hermes --status | /hermes --result <id> | /hermes --cancel <id> | /hermes --reset-model",
+    description: "Ask any model via Hermes CLI (non-blocking). Usage: /hermes <message> | /hermes --tui <message> | /hermes --tui-wezterm-beta <message> | /hermes -m model <message> | /hermes --status | /hermes --result <id> | /hermes --cancel <id> | /hermes --reset-model",
     handler: async (args, ctx) => {
       const text = (args || "").trim();
       const parts = text.split(/\s+/);
@@ -521,20 +533,26 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
-      // --tui: spawn hermes in split pane, poll session file (Linux only)
+      // --tui / --tui-wezterm-beta: spawn hermes in split pane, poll session file
       const tuiMode = parts.includes("--tui");
-      const cleanedText = text.replace(/\s*--tui\s*/g, " ").trim();
+      const weztermBetaMode = parts.includes("--tui-wezterm-beta");
+      const isTui = tuiMode || weztermBetaMode;
 
-      // Guard: --tui is Linux-only
+      const cleanedText = text
+        .replace(/\s*--tui-wezterm-beta\s*/g, " ")
+        .replace(/\s*--tui\s*/g, " ")
+        .trim();
+
+      // Guard: --tui is Linux-only stable
       if (tuiMode && process.platform !== "linux") {
         ctx.ui.notify(
-          "--tui mode is currently supported on Linux only. Use default CLI mode instead: /hermes <message>",
+          "--tui is currently Linux-only. On Windows, use --tui-wezterm-beta inside WezTerm.",
           "warn",
         );
         return;
       }
 
-      // Guard: --tui requires WezTerm
+      // Guard: --tui requires WezTerm on Linux
       if (tuiMode && !isWezTerm()) {
         ctx.ui.notify(
           "--tui mode requires WezTerm. Use default CLI mode instead: /hermes <message>",
@@ -543,10 +561,19 @@ export default function (pi: ExtensionAPI) {
         return;
       }
 
+      // Guard: --tui-wezterm-beta requires wezterm cli
+      if (weztermBetaMode && !isWezTermAvailable()) {
+        ctx.ui.notify(
+          "--tui-wezterm-beta requires WezTerm and wezterm cli. Use default CLI mode instead: /hermes <message>",
+          "warn",
+        );
+        return;
+      }
+
       // Default: send message to model
       const { model, provider, message } = resolveModel(cleanedText);
       if (!message) {
-        ctx.ui.notify("Usage: /hermes <message> | /hermes --tui <message> | /hermes -m model <message> | /hermes --status | /hermes --result <id> | /hermes --cancel <id> | /hermes --reset-model", "warn");
+        ctx.ui.notify("Usage: /hermes <message> | /hermes --tui <message> | /hermes --tui-wezterm-beta <message> | /hermes -m model <message> | /hermes --status | /hermes --result <id> | /hermes --cancel <id> | /hermes --reset-model", "warn");
         return;
       }
 
@@ -560,12 +587,12 @@ export default function (pi: ExtensionAPI) {
       };
       tasks.set(id, task);
 
-      const modeLabel = tuiMode ? "TUI" : "CLI";
+      const modeLabel = isTui ? (weztermBetaMode ? "TUI-wezterm-beta" : "TUI") : "CLI";
       ctx.ui.notify(`→ Hermes task ${id.slice(0, 8)} started (${model}, ${modeLabel}): ${message.slice(0, 50)}${message.length > 50 ? "…" : ""}`, "info");
       ctx.ui.setStatus("hermes", `hermes: ${id.slice(0, 8)} running`);
 
       // Fire and forget — pi TUI stays responsive
-      if (tuiMode) {
+      if (isTui) {
         runTuiTask(task, model, provider, pi).catch(() => {});
       } else {
         runTask(task, model, provider, pi).catch(() => {});

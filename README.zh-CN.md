@@ -44,20 +44,21 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
 ## 使用方法
 
 ```
-/hermes <message>              # 使用上次使用的模型提问
-/hermes -m grok-4.3 <message>  # 指定模型
-/hermes -p xai-oauth <message> # 指定提供商
-/hermes --tui <message>        # 实时 TUI 模式（分屏）
-/hermes --status               # 列出运行中的任务
-/hermes --result <id>          # 获取已完成任务的结果
-/hermes --cancel <id>          # 取消运行中的任务
-/hermes --reset-model          # 清除模型缓存
+/hermes <message>                    # 使用上次使用的模型提问
+/hermes -m grok-4.3 <message>        # 指定模型
+/hermes -p xai-oauth <message>       # 指定提供商
+/hermes --tui <message>              # 实时 TUI 模式（仅限 Linux）
+/hermes --tui-wezterm-beta <message> # 实验性 WezTerm TUI（任意 OS）
+/hermes --status                     # 列出运行中的任务
+/hermes --result <id>                # 获取已完成任务的结果
+/hermes --cancel <id>                # 取消运行中的任务
+/hermes --reset-model                # 清除模型缓存
 ```
 
 - 首次使用的默认模型：`grok-4.3`
 - 上次使用的 `-m` / `-p` 值会被缓存，供后续调用使用
 - 任务在后台运行——Hermes 思考时 pi 保持响应
-- 使用 `--tui` 在 WezTerm 分屏中实时观看对话（仅限 Linux）
+- 使用 `--tui`（仅限 Linux）或 `--tui-wezterm-beta`（实验性，装有 WezTerm 的任意 OS）在分屏中实时观看
 
 ### 示例工作流
 
@@ -115,7 +116,17 @@ you: /hermes -m grok-4.3 用3个要点解释量子纠缠
   └─ 将结果注入 pi（与 CLI 模式相同的审查循环）
 ```
 
-在 Windows 和 macOS 上，`--tui` 会显示警告并退出。请使用默认 CLI 模式。
+### WezTerm 测试模式（`--tui-wezterm-beta`）— 实验性
+
+在安装了 WezTerm 且 `wezterm cli` 可用的任何 OS 上工作。
+与 `--tui` 相同的 session 文件轮询，但没有 Linux 限制。
+在 Windows 上，请在 WezTerm 中运行。
+
+```
+/hermes --tui-wezterm-beta <message>
+```
+
+在不支持的平台上，两种 TUI 模式都会显示警告并退出。
 
 ## 文件结构
 

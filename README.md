@@ -44,20 +44,21 @@ Then reload pi with `/reload`. You should see the extension load in the status b
 ## Usage
 
 ```
-/hermes <message>              # Ask with previously used model
-/hermes -m grok-4.3 <message>  # Specify model
-/hermes -p xai-oauth <message> # Specify provider
-/hermes --tui <message>        # Live TUI mode (split pane)
-/hermes --status               # List running tasks
-/hermes --result <id>          # Get completed task result
-/hermes --cancel <id>          # Cancel a running task
-/hermes --reset-model          # Clear model cache
+/hermes <message>                    # Ask with previously used model
+/hermes -m grok-4.3 <message>        # Specify model
+/hermes -p xai-oauth <message>       # Specify provider
+/hermes --tui <message>              # Live TUI mode (Linux only)
+/hermes --tui-wezterm-beta <message> # Experimental WezTerm TUI (any OS)
+/hermes --status                     # List running tasks
+/hermes --result <id>                # Get completed task result
+/hermes --cancel <id>                # Cancel a running task
+/hermes --reset-model                # Clear model cache
 ```
 
 - Default model on first use: `grok-4.3`
 - The last used `-m` / `-p` values are cached for subsequent calls
 - Tasks run in the background — pi stays responsive while Hermes thinks
-- Use `--tui` to watch the conversation live in a WezTerm split pane (Linux only)
+- Use `--tui` (Linux only) or `--tui-wezterm-beta` (experimental, any OS with WezTerm) to watch the conversation live in a split pane
 
 ### Example workflow
 
@@ -116,7 +117,17 @@ file until completion.
   └─ Inject result to pi (same review loop as CLI mode)
 ```
 
-On Windows and macOS, `--tui` exits with a warning. Use default CLI mode instead.
+### WezTerm beta mode (`--tui-wezterm-beta`) — experimental
+
+Works on any OS where WezTerm is installed and `wezterm cli` is available.
+Same session file polling as `--tui`, but without the Linux-only restriction.
+On Windows, run this inside WezTerm (not Windows Terminal).
+
+```
+/hermes --tui-wezterm-beta <message>
+```
+
+On unsupported platforms, both TUI modes exit with a warning.
 
 Single file: `hermes.ts` — no build step. Assumes pi's bundled extension runtime dependencies (including `typebox`).
 
