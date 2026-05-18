@@ -4,8 +4,8 @@
 
 pi-coding-agent 用の Hermes CLI 拡張。`hermes` CLI を経由して任意のモデルに接続し、`/permes` コマンドと `permes-review` レビューループを提供する。
 
-- **リポジトリ**: `na-navi/pi-hermes` (private)
-- **ローカルパス**: `projects/pi-hermes/`
+- **リポジトリ**: `na-navi/permes` (private)
+- **ローカルパス**: `projects/permes/`
 - **拡張の実稼働先**: `~/.pi/agent/extensions/`（permes.ts と permes-bin/）
 
 ## アーキテクチャ
@@ -147,7 +147,7 @@ OS、エディタ、`node_modules/`、`.env` など全員が無視すべきも�
 ## コミット・PR の文法ルール
 
 - URL と Issue/PR 番号の間に**半角スペース**を入れる。くっつくとリンクが切れる
-  - ✅ `https://github.com/na-navi/pi-hermes/issues/8`
+  - ✅ `https://github.com/na-navi/permes/issues/8`
   - ✅ `PR #22` の後にスペース
   - ❌ `https://...#22この後ろに何か`（リンクが壊れる）
 
