@@ -2,7 +2,7 @@
 
 言語: 日本語 | [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-![pi-hermes architecture](./assets/pi-hermes-hero.webp)
+![permes architecture](./assets/permes-hero.webp)
 
 [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) 用の Experimental Hermes CLI ブリッジ拡張。
 
