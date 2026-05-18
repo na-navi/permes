@@ -1,8 +1,8 @@
 # pi-hermes
 
-Hermes CLI extension for [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent).
+Experimental Hermes CLI bridge for [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent).
 
-Use the `/hermes` command to ask any model available in [Hermes Agent](https://github.com/nousresearch/hermes-agent) — Grok, Claude, GLM, and more — without leaving pi. Responses are reviewed autonomously and corrections are applied in a loop.
+This extension lets pi delegate a prompt to [Hermes Agent](https://github.com/nousresearch/hermes-agent) CLI in the background, then brings the result back into pi for autonomous review. Supports Grok, Claude, GLM, and any model available in Hermes.
 
 > **Target platform:** Windows 11 (native). This extension is developed and tested on Windows 11. Linux, macOS, and WSL2 may work but are not actively tested.
 
@@ -72,7 +72,7 @@ you: /hermes -m grok-4.3 Explain quantum entanglement in 3 bullet points
 | `hermes: command not found` | Hermes CLI not in PATH | Install Hermes Agent, or add its `bin` to PATH |
 | Extension doesn't load after `/reload` | File in wrong location | Check `~/.pi/agent/extensions/hermes.ts` exists |
 | Task fails with timeout | Hermes CLI hung or model unavailable | Try `hermes chat -q "test" -m grok-4.3` directly in terminal |
-| `hermes-review` says "No active session" | Review called without `/hermes` | Start a query with `/hermes` first |
+| `hermes-review` says "Task not found" | Wrong taskId or task expired | Use `/hermes --status` to find the correct task ID |
 | Model not found error | Model name typo or unavailable | Run `hermes --help` to list available models |
 
 ## Architecture
@@ -91,7 +91,7 @@ you: /hermes -m grok-4.3 Explain quantum entanglement in 3 bullet points
   └─ Max 3 review rounds, then escalate to user
 ```
 
-Single file: `hermes.ts` — no build step, no dependencies beyond pi's extension API.
+Single file: `hermes.ts` — no build step. Assumes pi's bundled extension runtime dependencies (including `typebox`).
 
 ## Documentation
 
