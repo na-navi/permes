@@ -1,5 +1,9 @@
 # pi-hermes
 
+言語: 日本語 | [English](./README.md) | [简体中文](./README.zh-CN.md)
+
+![pi-hermes architecture](./assets/pi-hermes-hero.webp)
+
 [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) 用の Experimental Hermes CLI ブリッジ拡張。
 
 [Hermes Agent](https://github.com/nousresearch/hermes-agent) CLI にバックグラウンドでプロンプトを投げ、結果を pi に持ち込んで自律レビューする。
@@ -42,18 +46,21 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
 ## 使い方
 
 ```
-/hermes <message>              # 前回と同じモデルで質問
-/hermes -m grok-4.3 <message>  # モデル指定
-/hermes -p xai-oauth <message> # プロバイダー指定
-/hermes --status               # 実行中タスク一覧
-/hermes --result <id>          # 完了タスクの結果取得
-/hermes --cancel <id>          # タスクをキャンセル
-/hermes --reset-model          # モデルキャッシュをクリア
+/hermes <message>                    # 前回と同じモデルで質問
+/hermes -m grok-4.3 <message>        # モデル指定
+/hermes -p xai-oauth <message>       # プロバイダー指定
+/hermes --tui <message>              # TUI ライブモード（Linux専用）
+/hermes --tui-wezterm-beta <message> # 実験的 WezTerm TUI（全OS）
+/hermes --status                     # 実行中タスク一覧
+/hermes --result <id>                # 完了タスクの結果取得
+/hermes --cancel <id>                # タスクをキャンセル
+/hermes --reset-model                # モデルキャッシュをクリア
 ```
 
 - 初回のデフォルトモデル: `grok-4.3`
 - 最後に使った `-m` / `-p` 値はキャッシュされ、次回以降の指定なし呼び出しで使われる
 - タスクはバックグラウンドで実行 — Hermes が考えている間も pi は操作可能
+- `--tui`（Linux専用）または `--tui-wezterm-beta`（実験的、WezTerm があれば全OS）で分割ペインにリアルタイム表示
 
 ## トラブルシューティング
 
@@ -67,10 +74,12 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
 
 ## アーキテクチャ
 
+### CLI モード（デフォルト）
+
 ```
 /hermes <message>
   │
-  ├─ hermes chat -q "msg" -m model -Q
+  ├─ hermes chat -q -Q "msg" -m model
   │   └─ CLI出力からセッションID + 応答テキストを抽出
   │
   ├─ pi が応答を自律レビュー
@@ -80,6 +89,33 @@ cp hermes.ts ~/.pi/agent/extensions/hermes.ts
   │
   └─ 最大3回のレビューラウンド、解決しない場合はユーザーに報告
 ```
+
+### TUI モード（`--tui`）— Linux 専用
+
+WezTerm が必要。分割ペインに hermes chat を起動し、セッションファイルをポーリングして完了を検知。
+
+```
+/hermes --tui <message>
+  │
+  ├─ WezTerm 分割ペインで hermes chat を起動
+  │
+  ├─ セッションファイルをポーリング（8秒間変化なしで完了判定）
+  │
+  ├─ セッション JSON から最後のアシスタントメッセージを読み取り
+  │
+  └─ pi に結果を注入（CLI モードと同じレビューループ）
+```
+
+### WezTerm ベータモード（`--tui-wezterm-beta`）— 実験的
+
+WezTerm がインストールされ `wezterm cli` が使える環境なら、OSを問わず動作。
+セッションファイルのポーリングは `--tui` と同じ。Windows では WezTerm 内で実行してください。
+
+```
+/hermes --tui-wezterm-beta <message>
+```
+
+非対応環境では警告して終了。
 
 単一ファイル: `hermes.ts` — ビルド不要。pi のバンドル済み拡張ランタイム依存関係（`typebox` を含む）を使用。
 
