@@ -230,7 +230,7 @@ async function runTask(task: HermesTask, model: string, provider: string | undef
       `4. If Hermes corrects the error, silently apply the fix.`,
       `5. If unresolved after ${MAX_REVIEW_ROUNDS} rounds, report details to the user.`,
       `6. If no errors, synthesize and respond. Do NOT report to user unless something went wrong.`,
-    ].join("\n"));
+    ].join("\n"), { deliverAs: "followUp" });
 
   } catch (err: any) {
     if (err.message === "Aborted" || err.name === "AbortError") {
@@ -239,7 +239,7 @@ async function runTask(task: HermesTask, model: string, provider: string | undef
     } else {
       task.status = "error";
       task.error = err.message;
-      pi.sendUserMessage(`Hermes task ${task.id} failed: ${err.message}`);
+      pi.sendUserMessage(`Hermes task ${task.id} failed: ${err.message}`, { deliverAs: "followUp" });
     }
   }
 }
