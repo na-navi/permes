@@ -1,10 +1,10 @@
-# pi-hermes
+# permes
 
 Languages: English | [日本語](./日本語README.md) | [简体中文](./README.zh-CN.md)
 
-![pi-hermes architecture](./assets/pi-hermes-hero.webp)
+![permes architecture](./assets/pi-hermes-hero.webp)
 
-Experimental Hermes CLI bridge for [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent).
+Experimental Hermes CLI bridge extension for [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent).
 
 This extension lets pi delegate a prompt to [Hermes Agent](https://github.com/nousresearch/hermes-agent) CLI in the background, then brings the result back into pi for autonomous review. Supports Grok, Claude, GLM, and any model available in Hermes.
 
@@ -15,7 +15,7 @@ This extension lets pi delegate a prompt to [Hermes Agent](https://github.com/no
 1. **Install Hermes Agent CLI** — follow the [official guide](https://github.com/nousresearch/hermes-agent#installation) for your platform.
 2. **Verify the CLI** — run `hermes --version` in your terminal. You should see a version number.
 3. **Install this extension** (see [Install](#install) below).
-4. **Reload pi** — type `/reload` in pi, then use `/hermes hello` to test.
+4. **Reload pi** — type `/reload` in pi, then use `/permes hello` to test.
 
 ## Prerequisites
 
@@ -31,10 +31,10 @@ Hermes Agent must be configured with at least one provider (e.g. `xai-oauth`). R
 
 ```bash
 # Create the runtime directory (stores model cache, etc.)
-mkdir -p ~/.pi/agent/extensions/hermes-bin
+mkdir -p ~/.pi/agent/extensions/permes-bin
 
 # Copy the extension file
-cp hermes.ts ~/.pi/agent/extensions/hermes.ts
+cp permes.ts ~/.pi/agent/extensions/permes.ts
 ```
 
 Then reload pi with `/reload`. You should see the extension load in the status bar.
@@ -44,15 +44,15 @@ Then reload pi with `/reload`. You should see the extension load in the status b
 ## Usage
 
 ```
-/hermes <message>                    # Ask with previously used model
-/hermes -m grok-4.3 <message>        # Specify model
-/hermes -p xai-oauth <message>       # Specify provider
-/hermes --tui <message>              # Live TUI mode (Linux only)
-/hermes --tui-wezterm-beta <message> # Experimental WezTerm TUI (any OS)
-/hermes --status                     # List running tasks
-/hermes --result <id>                # Get completed task result
-/hermes --cancel <id>                # Cancel a running task
-/hermes --reset-model                # Clear model cache
+/permes <message>                    # Ask with previously used model
+/permes -m grok-4.3 <message>        # Specify model
+/permes -p xai-oauth <message>       # Specify provider
+/permes --tui <message>              # Live TUI mode (Linux only)
+/permes --tui-wezterm-beta <message> # Experimental WezTerm TUI (any OS)
+/permes --status                     # List running tasks
+/permes --result <id>                # Get completed task result
+/permes --cancel <id>                # Cancel a running task
+/permes --reset-model                # Clear model cache
 ```
 
 - Default model on first use: `grok-4.3`
@@ -63,12 +63,12 @@ Then reload pi with `/reload`. You should see the extension load in the status b
 ### Example workflow
 
 ```
-you: /hermes -m grok-4.3 Explain quantum entanglement in 3 bullet points
+you: /permes -m grok-4.3 Explain quantum entanglement in 3 bullet points
 
-# pi notifies: → Hermes task abc123 started (grok-4.3): Explain quantum entanglement...
+# pi notifies: → Permes task abc123 started (grok-4.3): Explain quantum entanglement...
 
 # ...after a few seconds, Hermes responds. pi reviews it autonomously.
-# If pi finds an error, it sends feedback via hermes-review (up to 3 rounds).
+# If pi finds an error, it sends feedback via permes-review (up to 3 rounds).
 # If everything looks good, pi synthesizes the answer silently.
 ```
 
@@ -77,9 +77,9 @@ you: /hermes -m grok-4.3 Explain quantum entanglement in 3 bullet points
 | Problem | Cause | Fix |
 |---|---|---|
 | `hermes: command not found` | Hermes CLI not in PATH | Install Hermes Agent, or add its `bin` to PATH |
-| Extension doesn't load after `/reload` | File in wrong location | Check `~/.pi/agent/extensions/hermes.ts` exists |
+| Extension doesn't load after `/reload` | File in wrong location | Check `~/.pi/agent/extensions/permes.ts` exists |
 | Task fails with timeout | Hermes CLI hung or model unavailable | Try `hermes chat -q "test" -m grok-4.3` directly in terminal |
-| `hermes-review` says "Task not found" | Wrong taskId or task expired | Use `/hermes --status` to find the correct task ID |
+| `permes-review` says "Task not found" | Wrong taskId or task expired | Use `/permes --status` to find the correct task ID |
 | Model not found error | Model name typo or unavailable | Run `hermes --help` to list available models |
 
 ## Architecture
@@ -87,14 +87,14 @@ you: /hermes -m grok-4.3 Explain quantum entanglement in 3 bullet points
 ### CLI mode (default)
 
 ```
-/hermes <message>
+/permes <message>
   │
   ├─ hermes chat -q -Q "msg" -m model --provider provider
   │   └─ Parse session ID + response from CLI output
   │
   ├─ pi reviews response autonomously
   │   ├─ OK → done
-  │   └─ Error → hermes-review tool
+  │   └─ Error → permes-review tool
   │       └─ hermes -z "feedback" --resume <session_id>
   │
   └─ Max 3 review rounds, then escalate to user
@@ -106,7 +106,7 @@ Requires WezTerm. Spawns hermes chat in a split pane and polls the session
 file until completion.
 
 ```
-/hermes --tui <message>
+/permes --tui <message>
   │
   ├─ Spawn hermes chat in WezTerm split pane
   │
@@ -124,12 +124,12 @@ Same session file polling as `--tui`, but without the Linux-only restriction.
 On Windows, run this inside WezTerm (not Windows Terminal).
 
 ```
-/hermes --tui-wezterm-beta <message>
+/permes --tui-wezterm-beta <message>
 ```
 
 On unsupported platforms, both TUI modes exit with a warning.
 
-Single file: `hermes.ts` — no build step. Assumes pi's bundled extension runtime dependencies (including `typebox`).
+Single file: `permes.ts` — no build step. Assumes pi's bundled extension runtime dependencies (including `typebox`).
 
 ## Documentation
 
