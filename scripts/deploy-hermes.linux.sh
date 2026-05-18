@@ -11,8 +11,8 @@ fi
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
-SOURCE="$REPO_ROOT/hermes.ts"
-DEST="$HOME/.pi/agent/extensions/hermes.ts"
+SOURCE="$REPO_ROOT/permes.ts"
+DEST="$HOME/.pi/agent/extensions/permes.ts"
 
 mkdir -p "$(dirname "$DEST")"
 cp "$SOURCE" "$DEST"
