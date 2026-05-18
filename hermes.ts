@@ -366,12 +366,9 @@ export default function (pi: ExtensionAPI) {
       feedback: Type.String({
         description: "Specific feedback about what was wrong and what needs to be fixed. Be precise and constructive.",
       }),
-      round: Type.Number({
-        description: "Current review round number (1-" + MAX_REVIEW_ROUNDS + ")",
-      }),
     }),
     async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
-      const { taskId, feedback, round } = params;
+      const { taskId, feedback } = params;
 
       // Resolve task by full ID or prefix
       const task = tasks.get(taskId) || [...tasks.values()].find(t => t.id.startsWith(taskId));
@@ -396,19 +393,21 @@ export default function (pi: ExtensionAPI) {
         };
       }
 
-      if (round > MAX_REVIEW_ROUNDS) {
+      // Internal round counter — caller cannot bypass
+      const nextRound = (task.reviewRound ?? 0) + 1;
+
+      if (nextRound > MAX_REVIEW_ROUNDS) {
         return {
           content: [{ type: "text", text: `Max review rounds (${MAX_REVIEW_ROUNDS}) exceeded for task ${task.id}. Report current state to the user.` }],
           details: {},
         };
       }
 
-      // Update review round on the task
-      task.reviewRound = round;
+      task.reviewRound = nextRound;
 
       try {
         const response = await sendReview(
-          `Review feedback (${round}/${MAX_REVIEW_ROUNDS}):\n${feedback}\n\nPlease correct and respond again.`,
+          `Review feedback (${nextRound}/${MAX_REVIEW_ROUNDS}):\n${feedback}\n\nPlease correct and respond again.`,
           task.model,
           task.sessionId,
           task.provider,
@@ -416,7 +415,7 @@ export default function (pi: ExtensionAPI) {
         );
         return {
           content: [{ type: "text", text: response }],
-          details: { round, model: task.model, sessionId: task.sessionId, taskId: task.id },
+          details: { round: nextRound, model: task.model, sessionId: task.sessionId, taskId: task.id },
         };
       } catch (err: any) {
         if (signal?.aborted) {
