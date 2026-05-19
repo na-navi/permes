@@ -1,8 +1,10 @@
 {
 	"name": "permes",
 	"private": true,
+	"dependencies": {
+		"js-yaml": "^4.1.1"
+	},
 	"devDependencies": {
-		"js-yaml": "^4.1.1",
 		"@types/js-yaml": "^4.0.9"
 	}
 }
