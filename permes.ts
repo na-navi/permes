@@ -25,17 +25,53 @@ import { promisify } from "util";
 import { randomUUID } from "crypto";
 import { homedir } from "os";
 import { join } from "path";
+import yaml from "js-yaml";
 
 const execFileAsync = promisify(execFile);
 const execFileSync = execFileSyncReal;
 
-const HERMES_HOME = join(process.env.LOCALAPPDATA || join(homedir(), "AppData", "Local"), "hermes");
+const HERMES_HOME = process.env.HERMES_HOME
+  || join(process.env.LOCALAPPDATA || join(homedir(), "AppData", "Local"), "hermes");
 const HERMES_SESSIONS_DIR = join(HERMES_HOME, "sessions");
 const OLD_DIR = join(homedir(), ".pi", "agent", "extensions", "hermes-bin");
 const DIR = join(homedir(), ".pi", "agent", "extensions", "permes-bin");
 const MODEL_CACHE = join(DIR, ".default-model");
 const OLD_MODEL_CACHE = join(OLD_DIR, ".default-model");
-const DEFAULT_MODEL = "grok-4.3";
+const HERMES_CONFIG_PATH = join(HERMES_HOME, "config.yaml");
+// Linux/macOS fallback config paths (checked if HERMES_HOME/config.yaml not found)
+const LINUX_HERMES_CONFIG_PATHS = [
+  join(homedir(), ".config", "hermes", "config.yaml"),
+];
+const DEFAULT_MODEL = "glm-5-turbo";
+
+// --- Hermes config reader ---
+
+interface HermesConfig {
+  model?: {
+    provider?: string;
+    default?: string;
+    base_url?: string;
+  };
+}
+
+function readHermesDefaultModel(): { model: string; provider?: string } | null {
+  // Try HERMES_HOME/config.yaml first, then Linux/macOS fallback paths
+  const configPaths = [HERMES_CONFIG_PATH, ...LINUX_HERMES_CONFIG_PATHS];
+  for (const configPath of configPaths) {
+    try {
+      if (!existsSync(configPath)) continue;
+      const raw = readFileSync(configPath, "utf8");
+      const config = yaml.load(raw) as HermesConfig;
+      const model = config?.model?.default?.trim();
+      if (!model) continue;
+      return { model, provider: config?.model?.provider?.trim() };
+    } catch {
+      // Config unreadable or malformed at this path — try next
+      continue;
+    }
+  }
+  return null;
+}
 const MAX_REVIEW_ROUNDS = 3;
 const TASK_TIMEOUT = 180; // seconds (per-response)
 const MAX_BUFFER = 4 * 1024 * 1024; // 4 MB
@@ -188,11 +224,21 @@ function resolveModel(args: string): { model: string; provider?: string; message
 
   const message = remaining.join(" ");
 
-  // Use cached model if not specified
+  // Use cached model, then Hermes config, then hardcoded default
   if (!model) {
     const cached = readCachedModel();
-    model = cached?.model || DEFAULT_MODEL;
-    if (!provider) provider = cached?.provider;
+    if (cached?.model) {
+      model = cached.model;
+      if (!provider) provider = cached.provider;
+    } else {
+      const hermesDefault = readHermesDefaultModel();
+      if (hermesDefault) {
+        model = hermesDefault.model;
+        if (!provider) provider = hermesDefault.provider;
+      } else {
+        model = DEFAULT_MODEL;
+      }
+    }
   }
 
   // Cache the resolved model
