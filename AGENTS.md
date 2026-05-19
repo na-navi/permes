@@ -153,6 +153,29 @@ OS、エディタ、`node_modules/`、`.env` など全員が無視すべきも�
 
 ## 注意事項
 
+### ローカル検索は se を優先する
+
+ローカルファイルやディレクトリを探すときは、まず `se` を使う。
+
+`se` は romaji-aware Everything search（migemo + es）。主な使い方:
+
+```bash
+se --literal -p <path> -n <max> --no-interactive --max-seconds <seconds> <query>
+```
+
+- `-p, --path`: 検索範囲を指定
+- `-n, --max`: 最大結果数
+- `--literal`: migemo 展開せずに文字列検索
+- `--no-interactive`: fzf などの対話機能を無効化
+- `--max-seconds`: 検索タイムアウト
+- `--stats`: 経過時間と結果数を stderr に表示
+- `--check`: 読み取り専用のヘルスチェック
+- `--json`: `--check` の JSON 出力
+
+### 削除はゴミ箱を使う
+
+ファイルやディレクトリを削除するときは、完全削除ではなくゴミ箱へ送る。PowerShell では `Microsoft.VisualBasic.FileIO.FileSystem` の `RecycleOption.SendToRecycleBin` を使う。
+
 ### pi の作業中にディレクトリを mv してはいけない
 
 pi のセッションはカレントディレクトリのパスがキー。ディレクトリを mv すると bash が全部死ぬ（`Working directory does not exist`）。復旧には pi の再起動とセッション選択が必要。
