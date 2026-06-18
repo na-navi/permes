@@ -25,7 +25,6 @@ import { promisify } from "util";
 import { randomUUID } from "crypto";
 import { homedir } from "os";
 import { join } from "path";
-import yaml from "js-yaml";
 
 const execFileAsync = promisify(execFile);
 const execFileSync = execFileSyncReal;
@@ -54,6 +53,102 @@ interface HermesConfig {
   };
 }
 
+function stripYamlComment(value: string): string {
+  let quote: "'" | '"' | null = null;
+  let escaped = false;
+
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+
+    if (quote === '"' && char === "\\" && !escaped) {
+      escaped = true;
+      continue;
+    }
+
+    if (!escaped && (char === "'" || char === '"')) {
+      quote = quote === char ? null : (quote ?? char);
+    }
+
+    if (!quote && char === "#" && (i === 0 || /\s/.test(value[i - 1]))) {
+      return value.slice(0, i);
+    }
+
+    escaped = false;
+  }
+
+  return value;
+}
+
+function parseYamlScalar(value: string): string | undefined {
+  const trimmed = stripYamlComment(value).trim();
+  if (!trimmed) return undefined;
+  if (trimmed === "null" || trimmed === "~") return undefined;
+
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return trimmed.slice(1, -1);
+    }
+  }
+
+  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
+    return trimmed.slice(1, -1).replace(/''/g, "'");
+  }
+
+  return trimmed;
+}
+
+/**
+ * Parse the small Hermes config subset this extension needs.
+ *
+ * pi deploys permes.ts as a standalone extension file, so this cannot depend on
+ * js-yaml being present in node_modules. Hermes config only needs:
+ *
+ * model:
+ *   default: <model>
+ *   provider: <provider>
+ */
+function parseHermesConfig(raw: string): HermesConfig {
+  const config: HermesConfig = {};
+  let inModelBlock = false;
+  let modelIndent = -1;
+
+  for (const line of raw.split(/\r?\n/)) {
+    if (!line.trim() || line.trimStart().startsWith("#")) continue;
+
+    const indent = line.match(/^\s*/)?.[0].replace(/\t/g, "  ").length ?? 0;
+    const trimmed = line.trim();
+    const match = trimmed.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+    if (!match) continue;
+
+    const [, key, value] = match;
+
+    if (inModelBlock && indent <= modelIndent) {
+      inModelBlock = false;
+    }
+
+    if (!inModelBlock && key === "model" && indent === 0) {
+      inModelBlock = true;
+      modelIndent = indent;
+      config.model = config.model ?? {};
+      continue;
+    }
+
+    if (inModelBlock && indent > modelIndent && (key === "default" || key === "provider" || key === "base_url")) {
+      const scalar = parseYamlScalar(value);
+      if (scalar !== undefined) {
+        config.model = config.model ?? {};
+        if (key === "default") config.model.default = scalar;
+        else if (key === "provider") config.model.provider = scalar;
+        else config.model.base_url = scalar;
+      }
+    }
+  }
+
+  return config;
+}
+
 function readHermesDefaultModel(): { model: string; provider?: string } | null {
   // Try HERMES_HOME/config.yaml first, then Linux/macOS fallback paths
   const configPaths = [HERMES_CONFIG_PATH, ...LINUX_HERMES_CONFIG_PATHS];
@@ -61,10 +156,10 @@ function readHermesDefaultModel(): { model: string; provider?: string } | null {
     try {
       if (!existsSync(configPath)) continue;
       const raw = readFileSync(configPath, "utf8");
-      const config = yaml.load(raw) as HermesConfig;
-      const model = config?.model?.default?.trim();
+      const config = parseHermesConfig(raw);
+      const model = config.model?.default?.trim();
       if (!model) continue;
-      return { model, provider: config?.model?.provider?.trim() };
+      return { model, provider: config.model?.provider?.trim() };
     } catch {
       // Config unreadable or malformed at this path — try next
       continue;
