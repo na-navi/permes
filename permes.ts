@@ -25,7 +25,6 @@ import { promisify } from "util";
 import { randomUUID } from "crypto";
 import { homedir } from "os";
 import { join } from "path";
-import yaml from "js-yaml";
 
 const execFileAsync = promisify(execFile);
 const execFileSync = execFileSyncReal;
@@ -54,6 +53,98 @@ interface HermesConfig {
   };
 }
 
+function stripYamlComment(value: string): string {
+  let quote: "'" | "\"" | null = null;
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    if (quote) {
+      if (char === quote) quote = null;
+      if (char === "\\" && quote === "\"") i++;
+      continue;
+    }
+    if (char === "'" || char === "\"") {
+      quote = char;
+      continue;
+    }
+    if (char === "#" && (i === 0 || /\s/.test(value[i - 1]))) {
+      return value.slice(0, i).trimEnd();
+    }
+  }
+  return value.trimEnd();
+}
+
+function parseYamlString(value: string): string | undefined {
+  const trimmed = stripYamlComment(value).trim();
+  if (!trimmed || trimmed === "~" || /^null$/i.test(trimmed)) return undefined;
+
+  if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return trimmed.slice(1, -1);
+    }
+  }
+  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
+    return trimmed.slice(1, -1).replace(/''/g, "'");
+  }
+  return trimmed;
+}
+
+function parseInlineYamlMap(value: string): Record<string, string | undefined> {
+  const map: Record<string, string | undefined> = {};
+  const trimmed = stripYamlComment(value).trim();
+  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return map;
+
+  for (const item of trimmed.slice(1, -1).split(",")) {
+    const match = item.trim().match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+    if (!match) continue;
+    map[match[1]] = parseYamlString(match[2]);
+  }
+  return map;
+}
+
+function parseHermesConfig(raw: string): HermesConfig {
+  const config: HermesConfig = {};
+  let inModel = false;
+  let modelIndent = 0;
+
+  for (const line of raw.split(/\r?\n/)) {
+    if (!line.trim() || line.trimStart().startsWith("#")) continue;
+
+    const indent = line.match(/^\s*/)?.[0].replace(/\t/g, "  ").length ?? 0;
+    const trimmed = line.trim();
+    const modelMatch = trimmed.match(/^model\s*:\s*(.*)$/);
+
+    if (modelMatch) {
+      config.model ??= {};
+      modelIndent = indent;
+      inModel = true;
+
+      const inline = parseInlineYamlMap(modelMatch[1]);
+      if (inline.provider) config.model.provider = inline.provider;
+      if (inline.default) config.model.default = inline.default;
+      if (inline.base_url) config.model.base_url = inline.base_url;
+      continue;
+    }
+
+    if (!inModel) continue;
+    if (indent <= modelIndent) {
+      inModel = false;
+      continue;
+    }
+
+    const fieldMatch = trimmed.match(/^(provider|default|base_url)\s*:\s*(.*)$/);
+    if (!fieldMatch) continue;
+
+    const value = parseYamlString(fieldMatch[2]);
+    if (value === undefined) continue;
+    config.model ??= {};
+    config.model[fieldMatch[1] as keyof NonNullable<HermesConfig["model"]>] = value;
+  }
+
+  return config;
+}
+
 function readHermesDefaultModel(): { model: string; provider?: string } | null {
   // Try HERMES_HOME/config.yaml first, then Linux/macOS fallback paths
   const configPaths = [HERMES_CONFIG_PATH, ...LINUX_HERMES_CONFIG_PATHS];
@@ -61,7 +152,7 @@ function readHermesDefaultModel(): { model: string; provider?: string } | null {
     try {
       if (!existsSync(configPath)) continue;
       const raw = readFileSync(configPath, "utf8");
-      const config = yaml.load(raw) as HermesConfig;
+      const config = parseHermesConfig(raw);
       const model = config?.model?.default?.trim();
       if (!model) continue;
       return { model, provider: config?.model?.provider?.trim() };
